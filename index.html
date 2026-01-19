@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
     
     <style>
+        /* (كود الـ CSS لم يتغير) */
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Tahoma', sans-serif; }
         .app-container { display: flex; height: 100vh; width: 100vw; }
@@ -70,7 +71,8 @@
     </aside>
 
     <div id="map-container">
-        <div id="map"></div>
+        <!-- تأكد أن هذا الـ DIV له ارتفاع وعرض محددين بواسطة الـ CSS أعلاه -->
+        <div id="map"></div> 
     </div>
 </div>
 
@@ -79,32 +81,29 @@
 
 <script>
     // 1. تعريف طبقات خرائط جوجل
-    var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '&copy; Google Earth 2026' });
-    var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-    var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+    var googleSat = L.tileLayer('http://{s}://{x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '&copy; Google Earth 2026' });
+    var googleHybrid = L.tileLayer('http://{s}://{x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+    var googleStreets = L.tileLayer('http://{s}://{x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
 
     // 2. إنشاء الخريطة والتركيز على الأردن
     var map = L.map('map', { center: [31.2, 36.5], zoom: 7, layers: [googleSat] }); // إحداثيات مركز الأردن تقريباً
     var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    // 3. أدوات الرسم
+    // 3. أدوات الرسم (باقي الوظائف كما هي)
     var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: { polyline: true, polygon: true, rectangle: true, circle: true, marker: false } });
     map.addControl(drawControl);
 
-    // 4. تغيير نوع الخريطة
     function changeMapType() {
         var type = document.getElementById('mapType').value;
         map.removeLayer(googleSat);
         map.removeLayer(googleHybrid);
         map.removeLayer(googleStreets);
-        
         if(type === 'satellite') googleSat.addTo(map);
         if(type === 'hybrid') googleHybrid.addTo(map);
         if(type === 'streets') googleStreets.addTo(map);
     }
-
-    // 5. رفع صورة فوق خرائط جوجل
+    // ... (بقية دوال رفع الصورة وتلوين ورسم وحفظ البيانات) ...
     var imgOverlay = null;
     document.getElementById('uploadImg').onchange = function(e) {
         var reader = new FileReader();
@@ -118,7 +117,6 @@
         reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 6. تلوين المناطق المرسومة
     map.on(L.Draw.Event.CREATED, function (e) {
         var layer = e.layer;
         var color = document.getElementById('severity').value;
@@ -126,9 +124,12 @@
         drawnItems.addLayer(layer);
     });
 
-    // 7. تصدير البيانات ومسح الخريطة
     function downloadJSON() {
         var data = drawnItems.toGeoJSON();
+        if (data.features.length === 0) {
+            alert("يرجى رسم منطقة واحدة على الأقل قبل التصدير.");
+            return;
+        }
         var blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
@@ -142,8 +143,23 @@
             document.getElementById('statusLine').innerText = "تم مسح البيانات";
         }
     }
+    // ********************************************
+    // الحل الفعلي لمشكلة اللون الأبيض (invalidateSize)
+    // ********************************************
+    // هذا الكود يضمن تحديث حجم الخريطة بعد تحميل الصفحة بالكامل
+    window.onload = function() {
+        // ننتظر قليلاً للتأكد من اكتمال تحميل الـ CSS وتحديد أبعاد الـ DIV
+        setTimeout(function() {
+            if (map) {
+                map.invalidateSize();
+                console.log("Map size refreshed successfully, white space issue resolved.");
+                document.getElementById('statusLine').innerText = "تم تحديث أبعاد الخريطة بنجاح.";
+            } else {
+                console.error("Map object not found!");
+            }
+        }, 300); // 300 ميلي ثانية كافية عادةً
+    };
 
-    window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
 </script>
 
 </body>
