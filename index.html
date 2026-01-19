@@ -2,138 +2,181 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام خرائط الطقس 2026</title>
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <link rel="stylesheet" href="https://unpkg.com" />
+    <title>نظام إدارة التحذيرات الجوية</title>
+    <!-- روابط مستقرة جداً لخرائط Leaflet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
+    
     <style>
-        /* إعدادات حاسمة لظهور الخريطة */
-        html, body { height: 100%; margin: 0; padding: 0; }
-        .wrapper { display: flex; height: 100vh; flex-direction: column; }
-        header { background: #1f2937; color: white; padding: 10px; text-align: center; }
-        .main { display: flex; flex: 1; overflow: hidden; }
-        #sidebar { width: 300px; padding: 15px; background: #f4f4f4; border-left: 1px solid #ccc; overflow-y: auto; }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
-        /* هذا الجزء هو الأهم لظهور الخريطة */
-        #map { flex: 1; height: 100%; min-height: 100%; background: #ddd; }
+        .main-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* شريط جانبي ثابت */
+        #sidebar { 
+            width: 320px; 
+            background: #ffffff; 
+            border-left: 2px solid #e5e7eb; 
+            padding: 20px; 
+            z-index: 1000; 
+            overflow-y: auto;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+        }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select, button { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        button { background: #2563eb; color: white; cursor: pointer; border: none; }
-        button:hover { background: #1d4ed8; }
-        .clear-btn { background: #dc2626; margin-top: 5px; }
+        /* حاوية الخريطة - يجب أن تكون مرنة */
+        #map { 
+            flex-grow: 1; 
+            height: 100%; 
+            background: #f3f4f6; /* لون خلفية في حال تأخر التحميل */
+        }
+
+        h2 { font-size: 1.1rem; color: #1f2937; margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+        input, select, button { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+        
+        button { background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: bold; margin-bottom: 8px; }
+        button:hover { background: #2563eb; }
+        .btn-clear { background: #ef4444; }
+        .btn-clear:hover { background: #dc2626; }
+        
+        .status-bar { font-size: 0.8rem; color: #6b7280; margin-top: 10px; padding: 8px; background: #f9fafb; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <header><h1>نظام التحذيرات الجوية - الأردن 2026</h1></header>
-    <div class="main">
-        <aside id="sidebar">
-            <div class="form-group">
-                <label>1. ارفع صورة الخريطة من جهازك</label>
-                <input type="file" id="imgInput" accept="image/*">
-            </div>
-            <hr>
-            <div class="form-group">
-                <label>2. نوع التحذير</label>
-                <select id="alertType">
-                    <option value="ثلوج">❄️ ثلوج</option>
-                    <option value="أمطار">🌧️ أمطار غزيرة</option>
-                    <option value="رياح">💨 رياح قوية</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>3. الشدة</label>
-                <select id="severity">
-                    <option value="extreme">🔴 شديد جداً</option>
-                    <option value="high">🟠 عالٍ</option>
-                    <option value="moderate">🟡 متوسط</option>
-                </select>
-            </div>
-            <button onclick="exportData()">تصدير البيانات (GeoJSON)</button>
-            <button class="clear-btn" onclick="clearMap()">مسح كل شيء</button>
-        </aside>
+<div class="main-container">
+    <aside id="sidebar">
+        <h2>إعدادات الخريطة</h2>
+        
+        <div class="input-group">
+            <label>1. رفع صورة خريطة (خلفية)</label>
+            <input type="file" id="imageUploader" accept="image/*">
+        </div>
 
-        <!-- حاوية الخريطة -->
-        <div id="map"></div>
-    </div>
+        <div class="input-group">
+            <label>2. نوع التحذير</label>
+            <select id="alertType">
+                <option value="ثلوج">❄️ ثلوج</option>
+                <option value="أمطار">🌧️ أمطار غزيرة</option>
+                <option value="غبار">🌪️ غبار وعواصف</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>3. درجة الخطورة</label>
+            <select id="severity">
+                <option value="red">🔴 شديد جداً</option>
+                <option value="orange">🟠 متوسط</option>
+                <option value="yellow">🟡 منخفض</option>
+            </select>
+        </div>
+
+        <button onclick="saveToFile()">حفظ وتصدير GeoJSON</button>
+        <button class="btn-clear" onclick="deleteAll()">مسح كافة العناصر</button>
+
+        <div class="status-bar" id="status">الحالة: جاهز</div>
+    </aside>
+
+    <!-- منطقة الخريطة -->
+    <div id="map"></div>
 </div>
 
-<script src="https://unpkg.com"></script>
-<script src="https://unpkg.com"></script>
+<!-- تحميل المكتبات بالترتيب الصحيح -->
+<script src="https://cdnjs.cloudflare.com"></script>
+<script src="https://cdnjs.cloudflare.com"></script>
 
 <script>
-    // 1. تشغيل الخريطة فوراً
-    var map = L.map('map').setView([31.24, 36.51], 7);
+    // 1. تهيئة الخريطة فوراً
+    const map = L.map('map', {
+        center: [31.24, 36.51],
+        zoom: 7,
+        zoomControl: true
+    });
 
-    // 2. إضافة طبقة الخريطة (قمر صناعي أو طرق)
+    // 2. إضافة طبقة الطرق (OpenStreetMap) لضمان عدم ظهور مساحة فارغة
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
+        attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    var drawnItems = new L.FeatureGroup();
+    const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    // 3. أدوات الرسم
-    var drawControl = new L.Control.Draw({
+    // 3. تفعيل أدوات الرسم
+    const drawControl = new L.Control.Draw({
         edit: { featureGroup: drawnItems },
         draw: { polyline: false, circlemarker: false }
     });
     map.addControl(drawControl);
 
-    // 4. رفع الصورة ووضعها على الخريطة
-    var overlay = null;
-    document.getElementById('imgInput').onchange = function(e) {
-        var reader = new FileReader();
-        reader.onload = function(event) {
-            var img = new Image();
-            img.onload = function() {
-                // وضع الصورة في مركز الأردن تلقائياً بمساحة معقولة
-                var bounds = [[29.5, 34.5], [33.5, 39.5]];
-                if (overlay) map.removeLayer(overlay);
-                overlay = L.imageOverlay(event.target.result, bounds, { opacity: 0.7 }).addTo(map);
-                map.fitBounds(bounds); // التركيز على الصورة فور رفعها
-                alert("تم رفع الخريطة بنجاح! يمكنك الآن الرسم فوقها.");
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    };
+    // 4. معالجة رفع الصورة
+    let imageLayer = null;
+    document.getElementById('imageUploader').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    // 5. حفظ الرسوم
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const imgUrl = event.target.result;
+            // إحداثيات افتراضية لتغطية مساحة الأردن بالصورة
+            const bounds = [[29.2, 34.5], [33.5, 39.3]]; 
+            
+            if (imageLayer) map.removeLayer(imageLayer);
+            
+            imageLayer = L.imageOverlay(imgUrl, bounds, { opacity: 0.8 }).addTo(map);
+            map.fitBounds(bounds);
+            document.getElementById('status').innerText = "الحالة: تم تحميل الصورة بنجاح";
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 5. حفظ الرسوم المضافة
     map.on(L.Draw.Event.CREATED, function (e) {
-        var layer = e.layer;
-        var type = document.getElementById('alertType').value;
-        var sev = document.getElementById('severity').value;
-        
-        var color = sev === 'extreme' ? 'red' : (sev === 'high' ? 'orange' : 'yellow');
-        layer.setStyle({ color: 'black', fillColor: color, fillOpacity: 0.5 });
-        layer.bindPopup("تحذير: " + type).openPopup();
-        
-        layer.feature = { properties: { type: type, severity: sev } };
+        const layer = e.layer;
+        const severity = document.getElementById('severity').value;
+        const type = document.getElementById('alertType').value;
+
+        layer.setStyle({
+            fillColor: severity,
+            fillOpacity: 0.5,
+            color: "#000",
+            weight: 1
+        });
+
+        layer.bindPopup(`<b>نوع التحذير:</b> ${type}`);
+        layer.feature = { properties: { type, severity } };
         drawnItems.addLayer(layer);
     });
 
     // 6. وظائف الأزرار
-    function exportData() {
-        var data = drawnItems.toGeoJSON();
-        var blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url; a.download = 'weather_2026.geojson'; a.click();
+    function saveToFile() {
+        const data = drawnItems.toGeoJSON();
+        if (data.features.length === 0) {
+            alert("يرجى رسم منطقة واحدة على الأقل قبل الحفظ");
+            return;
+        }
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Jordan-Weather-Alerts-2026.geojson';
+        a.click();
     }
 
-    function clearMap() {
-        if(confirm("مسح؟")) {
+    function deleteAll() {
+        if(confirm("هل أنت متأكد من حذف كافة الرسومات والصورة؟")) {
             drawnItems.clearLayers();
-            if(overlay) map.removeLayer(overlay);
+            if (imageLayer) map.removeLayer(imageLayer);
+            document.getElementById('status').innerText = "الحالة: تم مسح الخريطة";
         }
     }
 
-    // حل مشكلة عدم ظهور الخريطة عند التحميل الأولي
-    window.onload = function() {
-        setTimeout(function(){ map.invalidateSize(); }, 500);
+    // إصلاح مشكلة ظهور الخريطة فارغة في بعض المتصفحات
+    window.onload = () => {
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
     };
 </script>
 
