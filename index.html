@@ -3,300 +3,211 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>خريطة التحذيرات الجوية - الأردن</title>
+  <title>نظام إدارة التحذيرات الجوية - الأردن 2026</title>
 
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4QjNQG8Yp2vQn2QnVQnYQfQvHkGmZQGQ2v5bYwZ0Xk="
-    crossorigin=""
-  />
+  <link rel="stylesheet" href="https://unpkg.com" />
   <!-- Leaflet Draw CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com" />
 
   <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f7f7f7; }
-    header { background: #1f2937; color: #fff; padding: 12px 16px; }
-    header h1 { margin: 0; font-size: 18px; }
-    .container { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; }
-    #sidebar {
-      background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;
-    }
-    #map { height: 80vh; border: 1px solid #e5e7eb; border-radius: 8px; }
-    .group { margin-bottom: 12px; }
-    .group label { display: block; font-weight: 600; margin-bottom: 6px; }
-    select, input[type="text"], button {
-      width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;
-    }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .legend {
-      background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; font-size: 13px;
-    }
-    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .color-box { width: 16px; height: 16px; border-radius: 3px; border: 1px solid #d1d5db; }
-    .actions button { margin-top: 8px; }
-    .note { font-size: 12px; color: #6b7280; }
+    :root { --primary: #1f2937; --accent: #3b82f6; }
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; color: #1f2937; }
+    header { background: var(--primary); color: #fff; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; }
+    
+    .container { display: grid; grid-template-columns: 350px 1fr; gap: 1rem; padding: 1rem; height: calc(100vh - 70px); box-sizing: border-box; }
+    #sidebar { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow-y: auto; }
+    #map { border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 1; }
+
+    .group { margin-bottom: 1.25rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    select, input, button { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; transition: all 0.2s; }
+    select:focus, input:focus { outline: none; border-color: var(--accent); ring: 2px var(--accent); }
+    
+    .legend { background: #f9fafb; padding: 1rem; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+    .color-box { width: 14px; height: 14px; border-radius: 3px; }
+    
+    .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 1rem; }
+    .btn-primary { background: var(--accent); color: white; border: none; cursor: pointer; font-weight: 600; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; cursor: pointer; }
+    .btn-danger:hover { background: #fecaca; }
+    
+    .file-input-wrapper { position: relative; margin-top: 10px; }
+    .note { font-size: 0.75rem; color: #6b7280; margin-top: 1rem; line-height: 1.4; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>خريطة التحذيرات الجوية — الأردن</h1>
-  </header>
 
-  <div class="container">
-    <aside id="sidebar">
-      <div class="group">
-        <label>نوع التحذير</label>
-        <select id="alertType">
-          <option value="rain">أمطار غزيرة</option>
-          <option value="storm">عواصف رعدية</option>
-          <option value="snow">ثلوج</option>
-          <option value="wind">رياح قوية</option>
-          <option value="flood">سيول</option>
-          <option value="heat">موجة حر</option>
-          <option value="cold">موجة برد</option>
-        </select>
+<header>
+  <h1>⚠️ نظام إدارة التحذيرات الجوية — الأردن</h1>
+</header>
+
+<div class="container">
+  <aside id="sidebar">
+    <div class="group">
+      <label>نوع التحذير</label>
+      <select id="alertType">
+        <option value="rain">🌧️ أمطار غزيرة</option>
+        <option value="storm">⛈️ عواصف رعدية</option>
+        <option value="snow">❄️ ثلوج</option>
+        <option value="wind">💨 رياح قوية</option>
+        <option value="flood">🌊 سيول</option>
+        <option value="heat">🔥 موجة حر</option>
+        <option value="cold">🥶 موجة برد</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <label>شدة التحذير</label>
+      <select id="severity">
+        <option value="low">منخفض (أخضر)</option>
+        <option value="moderate">متوسط (أصفر)</option>
+        <option value="high">عالٍ (برتقالي)</option>
+        <option value="extreme">شديد جداً (أحمر)</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <label>وصف إضافي</label>
+      <input type="text" id="description" placeholder="مثال: تراكمات ثلجية فوق 1000م"/>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="color-box" style="background:#9ae6b4"></span> منخفض</div>
+      <div class="legend-item"><span class="color-box" style="background:#f6e05e"></span> متوسط</div>
+      <div class="legend-item"><span class="color-box" style="background:#f6ad55"></span> عالٍ</div>
+      <div class="legend-item"><span class="color-box" style="background:#fc8181"></span> شديد جداً</div>
+    </div>
+
+    <div class="actions">
+      <button id="exportBtn" class="btn-primary">تصدير الخريطة (GeoJSON)</button>
+      <div class="file-input-wrapper">
+        <label>استيراد ملف تحذيرات</label>
+        <input type="file" id="importFile" accept=".json,.geojson"/>
       </div>
+      <button id="clearBtn" class="btn-danger">مسح كافة البيانات</button>
+    </div>
+    
+    <p class="note">
+      * استخدم أدوات الرسم يسار الخريطة لتحديد المناطق.<br>
+      * يمكنك الضغط على المنطقة المرسومة لعرض تفاصيلها.
+    </p>
+  </aside>
 
-      <div class="group">
-        <label>شدة التحذير</label>
-        <select id="severity">
-          <option value="low">منخفض</option>
-          <option value="moderate">متوسط</option>
-          <option value="high">عالٍ</option>
-          <option value="extreme">شديد جداً</option>
-        </select>
+  <main id="map"></main>
+</div>
+
+<script src="https://unpkg.com"></script>
+<script src="https://unpkg.com"></script>
+
+<script>
+  const severityColors = {
+    low: '#9ae6b4', moderate: '#f6e05e', high: '#f6ad55', extreme: '#fc8181'
+  };
+
+  const alertIcons = {
+    rain: '🌧️', storm: '⛈️', snow: '❄️', wind: '💨', flood: '🌊', heat: '🔥', cold: '🥶'
+  };
+
+  // إعداد الخريطة
+  const map = L.map('map').setView([31.24, 36.51], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  const drawnItems = new L.FeatureGroup();
+  map.addLayer(drawnItems);
+
+  // إعداد أدوات الرسم
+  const drawControl = new L.Control.Draw({
+    position: 'topleft',
+    draw: {
+      polyline: false, circlemarker: false,
+      polygon: { allowIntersection: false, shapeOptions: { weight: 2 } },
+      rectangle: { shapeOptions: { weight: 2 } },
+      circle: { shapeOptions: { weight: 2 } },
+      marker: true
+    },
+    edit: { featureGroup: drawnItems, remove: true }
+  });
+  map.addControl(drawControl);
+
+  // وظيفة التنسيق
+  function applyLayerStyle(layer, properties) {
+    const color = severityColors[properties.severity] || '#333';
+    
+    if (layer instanceof L.Path) {
+      layer.setStyle({
+        fillColor: color,
+        fillOpacity: 0.5,
+        color: '#333',
+        weight: 2
+      });
+    }
+
+    const popupContent = `
+      <div style="direction:rtl; text-align:right; font-family:sans-serif;">
+        <strong style="font-size:14px;">${alertIcons[properties.alertType] || '⚠️'} تحذير الجو</strong><br>
+        <b>الشدة:</b> ${properties.severity}<br>
+        <b>الوصف:</b> ${properties.description || 'لا يوجد وصف'}<br>
+        <hr style="margin:5px 0">
+        <small style="color:grey;">تاريخ الإنشاء: 2026-01-19</small>
       </div>
+    `;
+    layer.bindPopup(popupContent);
+    
+    // حفظ البيانات في الكائن لغايات التصدير
+    layer.feature = layer.feature || { type: 'Feature', properties: {} };
+    layer.feature.properties = properties;
+  }
 
-      <div class="group">
-        <label>وصف مختصر (اختياري)</label>
-        <input type="text" id="description" placeholder="مثال: أمطار غزيرة مساءً في شمال المملكة"/>
-      </div>
-
-      <div class="group legend">
-        <div class="legend-item">
-          <span class="color-box" style="background:#9ae6b4"></span> منخفض
-        </div>
-        <div class="legend-item">
-          <span class="color-box" style="background:#f6e05e"></span> متوسط
-        </div>
-        <div class="legend-item">
-          <span class="color-box" style="background:#f6ad55"></span> عالٍ
-        </div>
-        <div class="legend-item">
-          <span class="color-box" style="background:#fc8181"></span> شديد جداً
-        </div>
-        <div class="note">استخدم أدوات الرسم على الخريطة لتحديد المناطق أو إضافة رموز.</div>
-      </div>
-
-      <div class="group actions">
-        <button id="exportBtn">تصدير التحذيرات (GeoJSON)</button>
-        <button id="clearBtn" style="background:#fee2e2">مسح كل العناصر</button>
-        <div class="group">
-          <label>استيراد GeoJSON</label>
-          <input type="file" id="importFile" accept=".json,.geojson"/>
-        </div>
-      </div>
-    </aside>
-
-    <main>
-      <div id="map"></div>
-    </main>
-  </div>
-
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kQvCwQ3Z8ZQxXqs="
-    crossorigin=""
-  ></script>
-  <!-- Leaflet Draw JS -->
-  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-
-  <script>
-    // ألوان الشدة
-    const severityColors = {
-      low:    '#9ae6b4', // أخضر فاتح
-      moderate: '#f6e05e', // أصفر
-      high:   '#f6ad55', // برتقالي
-      extreme:'#fc8181'  // أحمر
+  // عند انتهاء الرسم
+  map.on(L.Draw.Event.CREATED, function (e) {
+    const props = {
+      alertType: document.getElementById('alertType').value,
+      severity: document.getElementById('severity').value,
+      description: document.getElementById('description').value
     };
+    applyLayerStyle(e.layer, props);
+    drawnItems.addLayer(e.layer);
+  });
 
-    // رموز حسب نوع التحذير
-    const alertIcons = {
-      rain:   '🌧️',
-      storm:  '⛈️',
-      snow:   '❄️',
-      wind:   '💨',
-      flood:  '🌊',
-      heat:   '🔥',
-      cold:   '🥶'
-    };
+  // تصدير البيانات
+  document.getElementById('exportBtn').onclick = () => {
+    const data = drawnItems.toGeoJSON();
+    if (data.features.length === 0) return alert("الخريطة فارغة!");
+    
+    const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jordan-alerts-2026.geojson`;
+    a.click();
+  };
 
-    // إنشاء الخريطة — مركز على الأردن
-    const map = L.map('map', { zoomControl: true }).setView([31.24, 36.51], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // طبقة العناصر المرسومة
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
-    // أدوات الرسم
-    const drawControl = new L.Control.Draw({
-      position: 'topleft',
-      draw: {
-        polygon: { allowIntersection: false, showArea: true, shapeOptions: { color: '#333' } },
-        rectangle: { shapeOptions: { color: '#333' } },
-        circle: { shapeOptions: { color: '#333' } },
-        polyline: false,
-        circlemarker: false,
-        marker: true
-      },
-      edit: {
-        featureGroup: drawnItems,
-        remove: true
-      }
-    });
-    map.addControl(drawControl);
-
-    // تطبيق النمط حسب الشدة والنوع
-    function styleBySeverity(layer, severity, type, description) {
-      const color = severityColors[severity] || '#9ae6b4';
-      // مضلعات/مستطيلات/دوائر
-      if (layer.setStyle) {
-        layer.setStyle({
-          color: '#333',
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 0.45
-        });
-      }
-      // دوائر تحتاج ضبط يدوي
-      if (layer instanceof L.Circle) {
-        layer.setStyle({
-          color: '#333',
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 0.45
-        });
-      }
-      // نافذة منبثقة بالمعلومات
-      const icon = alertIcons[type] || '⚠️';
-      const html = `
-        <div style="min-width:200px">
-          <div style="font-weight:700;margin-bottom:6px">${icon} تحذير: ${labelType(type)} — الشدة: ${labelSeverity(severity)}</div>
-          ${description ? `<div style="margin-bottom:6px">${escapeHtml(description)}</div>` : ''}
-          <div style="font-size:12px;color:#6b7280">يمكن تعديل الشكل أو حذفه من أدوات التحرير.</div>
-        </div>
-      `;
-      layer.bindPopup(html);
-    }
-
-    function labelType(type) {
-      const map = {
-        rain: 'أمطار غزيرة',
-        storm: 'عواصف رعدية',
-        snow: 'ثلوج',
-        wind: 'رياح قوية',
-        flood: 'سيول',
-        heat: 'موجة حر',
-        cold: 'موجة برد'
-      };
-      return map[type] || 'تحذير';
-    }
-
-    function labelSeverity(s) {
-      const map = {
-        low: 'منخفض',
-        moderate: 'متوسط',
-        high: 'عالٍ',
-        extreme: 'شديد جداً'
-      };
-      return map[s] || s;
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-
-    // عند إنشاء عنصر جديد
-    map.on(L.Draw.Event.CREATED, function (e) {
-      const type = document.getElementById('alertType').value;
-      const severity = document.getElementById('severity').value;
-      const description = document.getElementById('description').value.trim();
-
-      const layer = e.layer;
-      styleBySeverity(layer, severity, type, description);
-
-      // حفظ البيانات الوصفية داخل layer
-      layer.feature = layer.feature || { type: 'Feature', properties: {} };
-      layer.feature.properties.alertType = type;
-      layer.feature.properties.severity = severity;
-      layer.feature.properties.description = description;
-
-      drawnItems.addLayer(layer);
-    });
-
-    // تصدير GeoJSON
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const data = drawnItems.toGeoJSON();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'alerts-jordan.geojson';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    // مسح كل العناصر
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      drawnItems.clearLayers();
-    });
-
-    // استيراد GeoJSON
-    document.getElementById('importFile').addEventListener('change', (evt) => {
-      const file = evt.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const geo = JSON.parse(reader.result);
-          const imported = L.geoJSON(geo, {
-            onEachFeature: (feature, layer) => {
-              const type = feature.properties?.alertType || 'rain';
-              const severity = feature.properties?.severity || 'low';
-              const description = feature.properties?.description || '';
-              styleBySeverity(layer, severity, type, description);
-              drawnItems.addLayer(layer);
-            }
-          });
-          // تقريب العرض على العناصر
-          try {
-            map.fitBounds(imported.getBounds(), { padding: [20, 20] });
-          } catch {}
-        } catch (err) {
-          alert('ملف GeoJSON غير صالح.');
+  // استيراد البيانات
+  document.getElementById('importFile').onchange = function(e) {
+    const reader = new FileReader();
+    reader.onload = function() {
+      const geojson = JSON.parse(reader.result);
+      L.geoJSON(geojson, {
+        onEachFeature: (feature, layer) => {
+          applyLayerStyle(layer, feature.properties);
+          drawnItems.addLayer(layer);
         }
-      };
-      reader.readAsText(file);
-    });
+      });
+    };
+    reader.readAsText(e.target.files[0]);
+  };
 
-    // تلميح: يمكنك لاحقاً إضافة حدود الأردن كـGeoJSON لعرضها كطبقة مرجعية.
-    // مثال مبسط: مستطيل تقريبي حول الأردن (للاستدلال فقط)
-    const jordanBounds = L.rectangle([[29.2, 34.9],[33.5, 39.3]], {
-      color: '#2563eb', weight: 1, fill: false, dashArray: '4,4'
-    }).addTo(map).bindTooltip('حدود الأردن (تقريبي مرجعي)');
-  </script>
+  // مسح الخريطة
+  document.getElementById('clearBtn').onclick = () => {
+    if(confirm("هل تريد مسح جميع التحذيرات من الخريطة؟")) drawnItems.clearLayers();
+  };
+</script>
+
 </body>
 </html>
