@@ -2,181 +2,149 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام إدارة التحذيرات الجوية</title>
-    <!-- روابط مستقرة جداً لخرائط Leaflet -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
+    <title>نظام خرائط الطقس - الأردن 2026</title>
+    <!-- روابط CDN بديلة وسريعة جداً -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
     
     <style>
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Tahoma', sans-serif; }
         
-        .main-container { display: flex; height: 100vh; width: 100vw; }
+        .app-container { display: flex; height: 100vh; width: 100vw; }
         
-        /* شريط جانبي ثابت */
+        /* القائمة الجانبية */
         #sidebar { 
             width: 320px; 
             background: #ffffff; 
-            border-left: 2px solid #e5e7eb; 
+            border-left: 2px solid #ddd; 
             padding: 20px; 
-            z-index: 1000; 
-            overflow-y: auto;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+            z-index: 2000; 
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        /* حاوية الخريطة - يجب أن تكون مرنة */
-        #map { 
-            flex-grow: 1; 
-            height: 100%; 
-            background: #f3f4f6; /* لون خلفية في حال تأخر التحميل */
-        }
+        /* حاوية الخريطة - تأكيد العرض والطول */
+        #map-container { flex: 1; position: relative; height: 100%; background: #eee; }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100%; height: 100%; }
 
-        h2 { font-size: 1.1rem; color: #1f2937; margin-top: 0; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
-        input, select, button { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+        .control-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; }
+        input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; }
         
-        button { background: #3b82f6; color: white; border: none; cursor: pointer; font-weight: bold; margin-bottom: 8px; }
-        button:hover { background: #2563eb; }
-        .btn-clear { background: #ef4444; }
-        .btn-clear:hover { background: #dc2626; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; margin-top: 10px; }
         
-        .status-bar { font-size: 0.8rem; color: #6b7280; margin-top: 10px; padding: 8px; background: #f9fafb; border-radius: 4px; }
+        .status { margin-top: auto; padding: 10px; background: #f8f9fa; font-size: 0.8rem; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
+<div class="app-container">
     <aside id="sidebar">
-        <h2>إعدادات الخريطة</h2>
+        <h3>التحكم بالخريطة</h3>
         
-        <div class="input-group">
-            <label>1. رفع صورة خريطة (خلفية)</label>
-            <input type="file" id="imageUploader" accept="image/*">
+        <div class="control-group">
+            <label>1. ارفع خريطة (صورة) من جهازك</label>
+            <input type="file" id="uploadImg" accept="image/*">
         </div>
 
-        <div class="input-group">
-            <label>2. نوع التحذير</label>
-            <select id="alertType">
-                <option value="ثلوج">❄️ ثلوج</option>
-                <option value="أمطار">🌧️ أمطار غزيرة</option>
-                <option value="غبار">🌪️ غبار وعواصف</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label>3. درجة الخطورة</label>
+        <div class="control-group">
+            <label>2. إعدادات الرسم</label>
             <select id="severity">
-                <option value="red">🔴 شديد جداً</option>
-                <option value="orange">🟠 متوسط</option>
-                <option value="yellow">🟡 منخفض</option>
+                <option value="red">🔴 خطر شديد</option>
+                <option value="orange">🟠 تحذير متوسط</option>
+                <option value="yellow">🟡 تنبيه منخفض</option>
             </select>
         </div>
 
-        <button onclick="saveToFile()">حفظ وتصدير GeoJSON</button>
-        <button class="btn-clear" onclick="deleteAll()">مسح كافة العناصر</button>
+        <button onclick="downloadJSON()">تصدير الخريطة (GeoJSON)</button>
+        <button class="btn-danger" onclick="resetMap()">مسح كافة البيانات</button>
 
-        <div class="status-bar" id="status">الحالة: جاهز</div>
+        <div class="status" id="statusLine">الحالة: الخريطة جاهزة</div>
     </aside>
 
-    <!-- منطقة الخريطة -->
-    <div id="map"></div>
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
 </div>
 
-<!-- تحميل المكتبات بالترتيب الصحيح -->
-<script src="https://cdnjs.cloudflare.com"></script>
+<!-- تحميل السكريبتات من روابط JSDelivr البديلة -->
+<script src="https://cdn.jsdelivr.net"></script>
 <script src="https://cdnjs.cloudflare.com"></script>
 
 <script>
-    // 1. تهيئة الخريطة فوراً
-    const map = L.map('map', {
+    // 1. إنشاء الخريطة مع خيار "تجنب التلاشي الرمادي"
+    var map = L.map('map', {
         center: [31.24, 36.51],
         zoom: 7,
-        zoomControl: true
+        fadeAnimation: false 
     });
 
-    // 2. إضافة طبقة الطرق (OpenStreetMap) لضمان عدم ظهور مساحة فارغة
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+    // 2. استخدام خريطة CartoDB (تعمل بشكل أفضل في المناطق العربية)
+    L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    const drawnItems = new L.FeatureGroup();
+    var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    // 3. تفعيل أدوات الرسم
-    const drawControl = new L.Control.Draw({
+    // 3. أدوات الرسم
+    var drawControl = new L.Control.Draw({
         edit: { featureGroup: drawnItems },
-        draw: { polyline: false, circlemarker: false }
+        draw: { polyline: false, marker: false, circlemarker: false }
     });
     map.addControl(drawControl);
 
-    // 4. معالجة رفع الصورة
-    let imageLayer = null;
-    document.getElementById('imageUploader').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
+    // 4. رفع الصورة وتركيبها
+    var imgOverlay = null;
+    document.getElementById('uploadImg').onchange = function(e) {
+        var reader = new FileReader();
         reader.onload = function(event) {
-            const imgUrl = event.target.result;
-            // إحداثيات افتراضية لتغطية مساحة الأردن بالصورة
-            const bounds = [[29.2, 34.5], [33.5, 39.3]]; 
-            
-            if (imageLayer) map.removeLayer(imageLayer);
-            
-            imageLayer = L.imageOverlay(imgUrl, bounds, { opacity: 0.8 }).addTo(map);
+            var bounds = [[29.0, 34.0], [33.5, 39.5]]; // إحداثيات تغطي الأردن
+            if (imgOverlay) map.removeLayer(imgOverlay);
+            imgOverlay = L.imageOverlay(event.target.result, bounds, { opacity: 0.7 }).addTo(map);
             map.fitBounds(bounds);
-            document.getElementById('status').innerText = "الحالة: تم تحميل الصورة بنجاح";
+            document.getElementById('statusLine').innerText = "الحالة: تم رفع الصورة بنجاح";
         };
-        reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(e.target.files[0]);
+    };
 
-    // 5. حفظ الرسوم المضافة
+    // 5. عند الرسم
     map.on(L.Draw.Event.CREATED, function (e) {
-        const layer = e.layer;
-        const severity = document.getElementById('severity').value;
-        const type = document.getElementById('alertType').value;
-
-        layer.setStyle({
-            fillColor: severity,
-            fillOpacity: 0.5,
-            color: "#000",
-            weight: 1
-        });
-
-        layer.bindPopup(`<b>نوع التحذير:</b> ${type}`);
-        layer.feature = { properties: { type, severity } };
+        var layer = e.layer;
+        var color = document.getElementById('severity').value;
+        layer.setStyle({ fillColor: color, fillOpacity: 0.5, color: "black", weight: 1 });
         drawnItems.addLayer(layer);
     });
 
     // 6. وظائف الأزرار
-    function saveToFile() {
-        const data = drawnItems.toGeoJSON();
-        if (data.features.length === 0) {
-            alert("يرجى رسم منطقة واحدة على الأقل قبل الحفظ");
-            return;
-        }
-        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Jordan-Weather-Alerts-2026.geojson';
-        a.click();
+    function downloadJSON() {
+        var data = drawnItems.toGeoJSON();
+        var blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = 'jordan-weather-2026.geojson';
+        link.click();
     }
 
-    function deleteAll() {
-        if(confirm("هل أنت متأكد من حذف كافة الرسومات والصورة؟")) {
+    function resetMap() {
+        if(confirm("هل تريد مسح الخريطة؟")) {
             drawnItems.clearLayers();
-            if (imageLayer) map.removeLayer(imageLayer);
-            document.getElementById('status').innerText = "الحالة: تم مسح الخريطة";
+            if(imgOverlay) map.removeLayer(imgOverlay);
+            document.getElementById('statusLine').innerText = "الحالة: تم المسح";
         }
     }
 
-    // إصلاح مشكلة ظهور الخريطة فارغة في بعض المتصفحات
-    window.onload = () => {
-        setTimeout(() => {
+    // الحل النهائي لضمان عدم ظهور اللون السكني
+    window.onload = function() {
+        setTimeout(function() {
             map.invalidateSize();
-        }, 300);
+            console.log("Map size refreshed.");
+        }, 500);
     };
 </script>
 
