@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>خريطة الأردن - تحذيرات جوية</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    #map { height: 90vh; }
+    body { margin:0; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center">خريطة الأردن - تحذيرات جوية</h2>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
+
+  <script>
+    // إنشاء الخريطة
+    var map = L.map('map').setView([31.24, 36.51], 7);
+
+    // طبقة الأساس
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // مجموعة العناصر المرسومة
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    // أدوات الرسم
+    var drawControl = new L.Control.Draw({
+      edit: { featureGroup: drawnItems }
+    });
+    map.addControl(drawControl);
+
+    // عند رسم عنصر جديد
+    map.on(L.Draw.Event.CREATED, function (e) {
+      var layer = e.layer;
+
+      // مثال: تلوين المنطقة حسب الشدة
+      layer.setStyle({
+        color: '#333',
+        fillColor: '#fc8181', // أحمر للتحذير الشديد
+        fillOpacity: 0.5
+      });
+
+      layer.bindPopup("⚠️ تحذير جوي: أمطار غزيرة");
+      drawnItems.addLayer(layer);
+    });
+  </script>
+</body>
+</html>
