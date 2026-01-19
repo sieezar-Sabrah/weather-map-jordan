@@ -3,74 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام خرائط الطقس - الأردن 2026</title>
+    <title>نظام خرائط الطقس - جوجل إيرث الأردن 2026</title>
     
-    <!-- تحميل مكتبة Leaflet الأساسية -->
+    <!-- مكتبات Leaflet الأساسية -->
     <link rel="stylesheet" href="https://unpkg.com" />
-    <!-- تحميل مكتبة أدوات الرسم -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com" />
     
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Tahoma', sans-serif; }
-        
         .app-container { display: flex; height: 100vh; width: 100vw; }
         
-        /* القائمة الجانبية */
         #sidebar { 
-            width: 320px; 
-            background: #ffffff; 
-            border-left: 2px solid #ddd; 
-            padding: 20px; 
-            z-index: 2000; 
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            overflow-y: auto;
+            width: 320px; background: #1a1a1a; color: white; padding: 20px; 
+            z-index: 2000; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.5);
         }
 
-        /* حاوية الخريطة */
-        #map-container { flex: 1; position: relative; height: 100%; background: #f0f0f0; }
+        #map-container { flex: 1; position: relative; height: 100%; }
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100%; height: 100%; }
 
         .control-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; color: #333; }
-        input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+        input, select, button { width: 100%; padding: 12px; border: none; border-radius: 8px; margin-bottom: 10px; }
         
-        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; margin-bottom: 10px; }
-        button:hover { background: #0056b3; }
+        button { background: #28a745; color: white; cursor: pointer; font-weight: bold; }
+        button:hover { background: #218838; }
         .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #a71d2a; }
         
-        .status { margin-top: auto; padding: 10px; background: #e9ecef; font-size: 0.85rem; border-radius: 5px; text-align: center; border: 1px solid #ced4da; }
-        h3 { margin-top: 0; color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .status { margin-top: auto; padding: 10px; background: #333; font-size: 0.8rem; border-radius: 5px; color: #00ff00; border: 1px solid #444; }
+        h3 { color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <aside id="sidebar">
-        <h3>نظام طقس الأردن 2026</h3>
+        <h3>رصد طقس الأردن 2026</h3>
         
         <div class="control-group">
-            <label>1. ارفع خريطة سينوبتيكية (Image)</label>
+            <label>1. نوع الخريطة</label>
+            <select id="mapType" onchange="changeMapType()">
+                <option value="satellite">جوجل إيرث (قمر صناعي)</option>
+                <option value="hybrid">جوجل (هجين - طرق وأسماء)</option>
+                <option value="streets">جوجل (خرائط الشوارع)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>2. رفع خريطة ضغط/أمطار (اختياري)</label>
             <input type="file" id="uploadImg" accept="image/*">
         </div>
 
         <div class="control-group">
-            <label>2. درجة خطورة المنطقة المرسومة</label>
+            <label>3. درجة التحذير للرسم</label>
             <select id="severity">
-                <option value="red">🔴 خطر شديد (عواصف/ثلوج)</option>
-                <option value="orange">🟠 تحذير متوسط (غبار/أمطار)</option>
-                <option value="yellow">🟡 تنبيه منخفض (رياح نشطة)</option>
-                <option value="green">🟢 مستقر</option>
+                <option value="#ff0000">🔴 منطقة خطر شديد</option>
+                <option value="#ff8c00">🟠 منطقة تحذير</option>
+                <option value="#ffff00">🟡 منطقة تنبيه</option>
             </select>
         </div>
 
-        <button onclick="downloadJSON()">تصدير البيانات (GeoJSON)</button>
-        <button class="btn-danger" onclick="resetMap()">مسح الخريطة بالكامل</button>
+        <button onclick="downloadJSON()">تصدير كملف GeoJSON</button>
+        <button class="btn-danger" onclick="resetMap()">مسح الكل</button>
 
-        <div class="status" id="statusLine">الحالة: الخريطة جاهزة للاستخدام</div>
+        <div class="status" id="statusLine">النظام متصل بجوجل إيرث...</div>
     </aside>
 
     <div id="map-container">
@@ -78,116 +74,76 @@
     </div>
 </div>
 
-<!-- تحميل السكريبتات بالترتيب الصحيح -->
 <script src="https://unpkg.com"></script>
 <script src="https://cdnjs.cloudflare.com"></script>
 
 <script>
-    // 1. إعداد الخريطة والتركيز على الأردن
-    var map = L.map('map', {
-        center: [31.24, 36.51],
-        zoom: 7,
-        fadeAnimation: true 
-    });
+    // 1. تعريف طبقات خرائط جوجل
+    var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '&copy; Google Earth 2026' });
+    var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+    var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{ maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
 
-    // 2. إضافة طبقة الخريطة (CartoDB Light)
-    L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors &copy; <a href="https://carto.com">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
-
-    // 3. إعداد طبقة الرسم
+    // 2. إنشاء الخريطة والتركيز على الأردن
+    var map = L.map('map', { center: [31.2, 36.5], zoom: 7, layers: [googleSat] }); // إحداثيات مركز الأردن تقريباً
     var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    // 4. تفعيل أدوات الرسم (المضلعات والدوائر)
-    var drawControl = new L.Control.Draw({
-        edit: {
-            featureGroup: drawnItems
-        },
-        draw: {
-            polygon: true,
-            polyline: false,
-            rectangle: true,
-            circle: true,
-            marker: false,
-            circlemarker: false
-        }
-    });
+    // 3. أدوات الرسم
+    var drawControl = new L.Control.Draw({ edit: { featureGroup: drawnItems }, draw: { polyline: true, polygon: true, rectangle: true, circle: true, marker: false } });
     map.addControl(drawControl);
 
-    // 5. وظيفة رفع صورة فوق الخريطة (Overlay)
+    // 4. تغيير نوع الخريطة
+    function changeMapType() {
+        var type = document.getElementById('mapType').value;
+        map.removeLayer(googleSat);
+        map.removeLayer(googleHybrid);
+        map.removeLayer(googleStreets);
+        
+        if(type === 'satellite') googleSat.addTo(map);
+        if(type === 'hybrid') googleHybrid.addTo(map);
+        if(type === 'streets') googleStreets.addTo(map);
+    }
+
+    // 5. رفع صورة فوق خرائط جوجل
     var imgOverlay = null;
     document.getElementById('uploadImg').onchange = function(e) {
-        var file = e.target.files[0];
-        if (!file) return;
-
         var reader = new FileReader();
         reader.onload = function(event) {
-            // إحداثيات تغطي حدود المملكة الأردنية الهاشمية تقريباً
-            var bounds = [[29.1, 34.2], [33.5, 39.3]]; 
-            
+            var bounds = [[29.18, 34.95], [33.37, 39.30]]; // حدود الأردن الدقيقة
             if (imgOverlay) map.removeLayer(imgOverlay);
-            
-            imgOverlay = L.imageOverlay(event.target.result, bounds, { 
-                opacity: 0.6,
-                interactive: false 
-            }).addTo(map);
-            
+            imgOverlay = L.imageOverlay(event.target.result, bounds, { opacity: 0.5 }).addTo(map);
             map.fitBounds(bounds);
-            document.getElementById('statusLine').innerText = "الحالة: تم دمج صورة الطقس";
+            document.getElementById('statusLine').innerText = "تم دمج صورة الطقس فوق جوجل إيرث";
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 6. التعامل مع الأشكال المرسومة وتلوينها حسب الاختيار
+    // 6. تلوين المناطق المرسومة
     map.on(L.Draw.Event.CREATED, function (e) {
         var layer = e.layer;
-        var severityColor = document.getElementById('severity').value;
-        
-        // تطبيق التنسيق بناءً على الدرجة المختارة
-        layer.setStyle({
-            fillColor: severityColor,
-            fillOpacity: 0.5,
-            color: "#333",
-            weight: 2
-        });
-        
+        var color = document.getElementById('severity').value;
+        layer.setStyle({ fillColor: color, fillOpacity: 0.4, color: color, weight: 2 });
         drawnItems.addLayer(layer);
-        document.getElementById('statusLine').innerText = "الحالة: تم إضافة منطقة تحذير";
     });
 
-    // 7. تصدير البيانات بصيغة GeoJSON
+    // 7. تصدير البيانات ومسح الخريطة
     function downloadJSON() {
         var data = drawnItems.toGeoJSON();
-        if (data.features.length === 0) {
-            alert("يرجى رسم منطقة واحدة على الأقل قبل التصدير.");
-            return;
-        }
         var blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
         var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = 'Jordan_Weather_Zones_2026.geojson';
-        link.click();
+        var a = document.createElement('a');
+        a.href = url; a.download = 'Jordan_Weather_Analysis_2026.geojson'; a.click();
     }
 
-    // 8. مسح الخريطة
     function resetMap() {
-        if(confirm("سيتم حذف جميع الرسومات والصور المرفوعة، هل أنت متأكد؟")) {
+        if(confirm("هل تريد مسح جميع البيانات؟")) {
             drawnItems.clearLayers();
             if(imgOverlay) map.removeLayer(imgOverlay);
-            document.getElementById('statusLine').innerText = "الحالة: تم تصفير الخريطة";
+            document.getElementById('statusLine').innerText = "تم مسح البيانات";
         }
     }
 
-    // معالجة مشكلة تحميل الخريطة في المتصفحات الحديثة
-    window.onload = function() {
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 400);
-    };
+    window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
 </script>
 
 </body>
